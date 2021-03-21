@@ -121,7 +121,7 @@ class StructGenerator(BaseNetwork):
             nn.ReLU(True),
 
             nn.ReflectionPad2d(3),
-            nn.Conv2d(in_channels=64, out_channels=1, kernel_size=7, padding=0),
+            nn.Conv2d(in_channels=64, out_channels=3, kernel_size=7, padding=0),
         )
 
         if init_weights:

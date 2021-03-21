@@ -54,6 +54,11 @@ class Dataset(torch.utils.data.Dataset):
         # load image
         img = imread(self.data[index])
 
+        # gray to rgb
+        if len(img.shape) < 3:
+            print(self.data[index])
+            img = gray2rgb(img)
+
         # resize/crop if needed
         if size != 0:
             img = self.resize(img, size, size)
@@ -86,6 +91,12 @@ class Dataset(torch.utils.data.Dataset):
         # external
         imgh, imgw = img.shape[0:2]
         struct = imread(self.struct_data[index])
+
+         # gray to rgb
+        if len(struct.shape) < 3:
+            print(self.struct_data[index])
+            struct = gray2rgb(struct)
+            
         struct = self.resize(struct, imgh, imgw)
 
         return struct
@@ -117,6 +128,8 @@ class Dataset(torch.utils.data.Dataset):
             mask_index = random.randint(0, len(self.mask_data) - 1)
             mask = imread(self.mask_data[mask_index])
             mask = self.resize(mask, imgh, imgw)
+            # print(mask.shape)
+            mask = rgb2gray(mask)
             mask = (mask > 0).astype(np.uint8) * 255       # threshold due to interpolation
             return mask
 

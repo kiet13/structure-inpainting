@@ -2,8 +2,9 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from .networks import InpaintGenerator, EdgeGenerator, Discriminator
+from .networks import InpaintGenerator, StructGenerator, Discriminator
 from .loss import AdversarialLoss, PerceptualLoss, StyleLoss
+from .utils import output_align
 
 
 class BaseModel(nn.Module):
@@ -85,18 +86,14 @@ class StructModel(BaseModel):
 
     def process(self, images, structs, masks):
         self.iteration += 1
-
-
-        # zero optimizers
-        self.gen_optimizer.zero_grad()
-        self.dis_optimizer.zero_grad()
-
-
+        
         # process outputs
         outputs = self(images, structs, masks)
         gen_loss = 0
         dis_loss = 0
 
+        # train discriminator
+        self.dis_optimizer.zero_grad()
 
         # discriminator loss
         dis_input_real = torch.cat((images, structs), dim=1)
@@ -107,13 +104,18 @@ class StructModel(BaseModel):
         dis_fake_loss = self.adversarial_loss(dis_fake, False, True)
         dis_loss += (dis_real_loss + dis_fake_loss) / 2
 
+        if dis_loss is not None:
+            dis_loss.backward()
+        self.dis_optimizer.step()
+
+        # train generator
+        self.gen_optimizer.zero_grad()
 
         # generator adversarial loss
         gen_input_fake = torch.cat((images, outputs), dim=1)
         gen_fake, gen_fake_feat = self.discriminator(gen_input_fake)        # in: (rgb(3) + struct(3))
         gen_gan_loss = self.adversarial_loss(gen_fake, True, False)
         gen_loss += gen_gan_loss
-
 
         # generator feature matching loss
         gen_fm_loss = 0
@@ -122,6 +124,9 @@ class StructModel(BaseModel):
         gen_fm_loss = gen_fm_loss * self.config.FM_LOSS_WEIGHT
         gen_loss += gen_fm_loss
 
+        if gen_loss is not None:
+            gen_loss.backward()
+        self.gen_optimizer.step()
 
         # create logs
         logs = [
@@ -135,19 +140,11 @@ class StructModel(BaseModel):
     def forward(self, images, structs, masks):
         structs_masked = (structs * (1 - masks))
         images_masked = (images * (1 - masks)) + masks
+    
         inputs = torch.cat((images_masked, structs_masked, masks), dim=1)
         outputs = self.generator(inputs)
         outputs = output_align(inputs, outputs)        # in: [masked rgb(3) + masked struct(3) + mask(1)]
         return outputs
-
-    def backward(self, gen_loss=None, dis_loss=None):
-        if dis_loss is not None:
-            dis_loss.backward()
-        self.dis_optimizer.step()
-
-        if gen_loss is not None:
-            gen_loss.backward()
-        self.gen_optimizer.step()
 
 
 
@@ -210,6 +207,7 @@ class InpaintingModel(BaseModel):
         dis_real_loss = self.adversarial_loss(dis_real, True, True)
         dis_fake_loss = self.adversarial_loss(dis_fake, False, True)
         dis_loss += (dis_real_loss + dis_fake_loss) / 2
+        
 
 
         # generator adversarial loss
@@ -254,8 +252,10 @@ class InpaintingModel(BaseModel):
         return outputs
 
     def backward(self, gen_loss=None, dis_loss=None):
+        gen_loss.backward()
+        self.gen_optimizer.step()
+        
         dis_loss.backward()
         self.dis_optimizer.step()
 
-        gen_loss.backward()
-        self.gen_optimizer.step()
+        

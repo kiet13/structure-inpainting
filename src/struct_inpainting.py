@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from .dataset import Dataset
 from .models import StructModel, InpaintingModel
 from .utils import Progbar, create_dir, stitch_images, imsave
+from .metrics import PSNR
 
 
 class StructInpaint():
@@ -72,7 +73,7 @@ class StructInpaint():
         train_loader = DataLoader(
             dataset=self.train_dataset,
             batch_size=self.config.BATCH_SIZE,
-            num_workers=4,
+            num_workers=2,
             drop_last=True,
             shuffle=True
         )
@@ -94,10 +95,12 @@ class StructInpaint():
             progbar = Progbar(total, width=20, stateful_metrics=['epoch', 'iter'])
 
             for items in train_loader:
+                images, structs, masks = self.cuda(*items)
+                
                 self.struct_model.train()
                 self.inpaint_model.train()
 
-                images, structs, masks = self.cuda(*items)
+                
 
                 # struct model
                 if model == 1:
@@ -111,8 +114,6 @@ class StructInpaint():
                     logs.append(('psnr', psnr.item()))
                     logs.append(('mae', mae.item()))
 
-                    # backward
-                    self.struct_model.backward(gen_loss, dis_loss)
                     iteration = self.struct_model.iteration
 
 
