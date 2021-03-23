@@ -117,12 +117,9 @@ class StructModel(BaseModel):
         gen_gan_loss = self.adversarial_loss(gen_fake, True, False)
         gen_loss += gen_gan_loss
 
-        # generator feature matching loss
-        gen_fm_loss = 0
-        for i in range(len(dis_real_feat)):
-            gen_fm_loss += self.l1_loss(gen_fake_feat[i], dis_real_feat[i].detach())
-        gen_fm_loss = gen_fm_loss * self.config.FM_LOSS_WEIGHT
-        gen_loss += gen_fm_loss
+        # generator l1 loss
+        gen_l1_loss = self.l1_loss(outputs, structs) * self.config.STRUCTURE_L1
+        gen_loss += gen_l1_loss
 
         if gen_loss is not None:
             gen_loss.backward()
@@ -132,7 +129,7 @@ class StructModel(BaseModel):
         logs = [
             ("l_d1", dis_loss.item()),
             ("l_g1", gen_gan_loss.item()),
-            ("l_fm", gen_fm_loss.item()),
+            ("l_l1", gen_l1_loss.item()),
         ]
 
         return outputs, gen_loss, dis_loss, logs
@@ -218,7 +215,7 @@ class InpaintingModel(BaseModel):
 
 
         # generator l1 loss
-        gen_l1_loss = self.l1_loss(outputs, images) * self.config.L1_LOSS_WEIGHT / torch.mean(masks)
+        gen_l1_loss = self.l1_loss(outputs, images) * self.config.INPAINT_L1 / torch.mean(masks)
         gen_loss += gen_l1_loss
 
 

@@ -234,10 +234,13 @@ def __denorm(x):
     x = (x + 1) / 2
     return x.clamp_(0, 1)
 
+def write_logs_2tensorboard(writer, logs, iteration):
+    for name, scalar in logs:
+        writer.add_scalar(name, scalar, iteration)
 
-def write_2tensorboard(iterations, results, train_writer, display_image_num, name):
-    results = [images.expand(-1, 3, -1, -1) for images in results] # expand gray-scale images to 3 channels
-    image_tensor = torch.cat([images[:display_image_num] for images in results], 0)
-    image_tensor = __denorm(image_tensor)
-    image_grid = vutils.make_grid(image_tensor.data, nrow=display_image_num, padding=0, normalize=False)
-    train_writer.add_image(name, image_grid, iterations) 
+
+def write_images_2tensorboard(writer, images, iteration):
+    for i in range(images.shape[0]):
+        writer.add_image(f"sample_{i}", images[i, ...], iteration)
+
+    

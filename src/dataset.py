@@ -56,7 +56,6 @@ class Dataset(torch.utils.data.Dataset):
 
         # gray to rgb
         if len(img.shape) < 3:
-            print(self.data[index])
             img = gray2rgb(img)
 
         # resize/crop if needed
@@ -94,7 +93,6 @@ class Dataset(torch.utils.data.Dataset):
 
          # gray to rgb
         if len(struct.shape) < 3:
-            print(self.struct_data[index])
             struct = gray2rgb(struct)
             
         struct = self.resize(struct, imgh, imgw)

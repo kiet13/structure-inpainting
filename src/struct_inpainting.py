@@ -4,8 +4,10 @@ import torch
 from torch.utils.data import DataLoader
 from .dataset import Dataset
 from .models import StructModel, InpaintingModel
-from .utils import Progbar, create_dir, stitch_images, imsave
-from .metrics import PSNR
+from .utils import Progbar, create_dir, stitch_images
+from .utils import write_logs_2tensorboard, write_images_2tensorboard
+from .metrics import PSNR, SSIM
+from torch.utils.tensorboard import SummaryWriter
 
 
 class StructInpaint():
@@ -25,6 +27,7 @@ class StructInpaint():
         self.inpaint_model = InpaintingModel(config).to(config.DEVICE)
 
         self.psnr = PSNR(255.0).to(config.DEVICE)
+        self.ssim = SSIM()
 
 
         # test mode
@@ -70,6 +73,8 @@ class StructInpaint():
 
 
     def train(self):
+        writer = SummaryWriter(self.config.TENSORBOARD_FOLDER)
+
         train_loader = DataLoader(
             dataset=self.train_dataset,
             batch_size=self.config.BATCH_SIZE,
@@ -100,8 +105,6 @@ class StructInpaint():
                 self.struct_model.train()
                 self.inpaint_model.train()
 
-                
-
                 # struct model
                 if model == 1:
                     # train
@@ -110,10 +113,13 @@ class StructInpaint():
 
                     # metrics
                     psnr = self.psnr(self.postprocess(structs), self.postprocess(outputs_merged))
+                    ssim = self.ssim(self.postprocess(structs), self.postprocess(outputs_merged))
                     mae = (torch.sum(torch.abs(structs - outputs_merged)) / torch.sum(structs)).float()
+                    
                     logs.append(('psnr', psnr.item()))
+                    logs.append(('ssim', ssim.item()))
                     logs.append(('mae', mae.item()))
-
+                    
                     iteration = self.struct_model.iteration
 
 
@@ -124,9 +130,12 @@ class StructInpaint():
                     outputs_merged = (outputs * masks) + (images * (1 - masks))
 
                     # metrics
-                    psnr = self.psnr(self.postprocess(images), self.postprocess(outputs_merged))
-                    mae = (torch.sum(torch.abs(images - outputs_merged)) / torch.sum(images)).float()
+                    psnr = self.psnr(self.postprocess(structs), self.postprocess(outputs_merged))
+                    ssim = self.ssim(self.postprocess(structs), self.postprocess(outputs_merged))
+                    mae = (torch.sum(torch.abs(structs - outputs_merged)) / torch.sum(structs)).float()
+                    
                     logs.append(('psnr', psnr.item()))
+                    logs.append(('ssim', ssim.item()))
                     logs.append(('mae', mae.item()))
 
                     # backward
@@ -148,9 +157,12 @@ class StructInpaint():
                     outputs_merged = (outputs * masks) + (images * (1 - masks))
 
                     # metrics
-                    psnr = self.psnr(self.postprocess(images), self.postprocess(outputs_merged))
-                    mae = (torch.sum(torch.abs(images - outputs_merged)) / torch.sum(images)).float()
+                    psnr = self.psnr(self.postprocess(structs), self.postprocess(outputs_merged))
+                    ssim = self.ssim(self.postprocess(structs), self.postprocess(outputs_merged))
+                    mae = (torch.sum(torch.abs(structs - outputs_merged)) / torch.sum(structs)).float()
+                    
                     logs.append(('psnr', psnr.item()))
+                    logs.append(('ssim', ssim.item()))
                     logs.append(('mae', mae.item()))
 
                     # backward
@@ -161,6 +173,13 @@ class StructInpaint():
                 if iteration >= max_iteration:
                     keep_training = False
                     break
+
+                 # sample model at checkpoints
+                if self.config.SAMPLE_INTERVAL and iteration % self.config.SAMPLE_INTERVAL == 0:
+                    
+                    images = self.sample()
+                    write_logs_2tensorboard(writer, logs, iteration)
+                    write_images_2tensorboard(writer, images, iteration)
 
                 logs = [
                     ("epoch", epoch),
@@ -173,10 +192,6 @@ class StructInpaint():
                 if self.config.LOG_INTERVAL and iteration % self.config.LOG_INTERVAL == 0:
                     self.log(logs)
 
-                # sample model at checkpoints
-                if self.config.SAMPLE_INTERVAL and iteration % self.config.SAMPLE_INTERVAL == 0:
-                    self.sample()
-
                 # evaluate model at checkpoints
                 if self.config.EVAL_INTERVAL and iteration % self.config.EVAL_INTERVAL == 0:
                     print('\nstart eval...\n')
@@ -187,6 +202,7 @@ class StructInpaint():
                     self.save()
 
         print('\nEnd training....')
+        writer.close()
 
     
     def eval(self):
@@ -346,22 +362,16 @@ class StructInpaint():
         image_per_row = 2
         if self.config.SAMPLE_SIZE <= 6:
             image_per_row = 1
+        
+        grid_images = torch.cat([images, inputs, structs, outputs, outputs_merged], dim=-1)
+   
+        # path = os.path.join(self.samples_path, self.model_name)
+        # name = os.path.join(path, str(iteration).zfill(5) + ".png")
+        # create_dir(path)
+        # print('\nsaving sample ' + name)
+        # images.save(name)
 
-        images = stitch_images(
-            self.postprocess(images),
-            self.postprocess(inputs),
-            self.postprocess(structs),
-            self.postprocess(outputs),
-            self.postprocess(outputs_merged),
-            img_per_row = image_per_row
-        )
-
-
-        path = os.path.join(self.samples_path, self.model_name)
-        name = os.path.join(path, str(iteration).zfill(5) + ".png")
-        create_dir(path)
-        print('\nsaving sample ' + name)
-        images.save(name)
+        return grid_images
 
     def log(self, logs):
         with open(self.log_file, 'a') as f:
