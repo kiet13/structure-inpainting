@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from .dataset import Dataset
 from .models import StructModel, InpaintingModel
-from .utils import Progbar, create_dir, stitch_images
+from .utils import Progbar, create_dir, stitch_images, imsave
 from .utils import write_logs_2tensorboard, write_images_2tensorboard
 from .metrics import PSNR, SSIM
 from torch.utils.tensorboard import SummaryWriter
@@ -73,7 +73,10 @@ class StructInpaint():
 
 
     def train(self):
-        writer = SummaryWriter(self.config.TENSORBOARD_FOLDER)
+        model_type = {1: 'struct', 2: 'inpaint', 3:'struct-inpaint'}
+        tensorboard_path = os.path.join(self.config.TENSORBOARD_FOLDER, 
+                                        model_type[self.config.MODEL] +'_'+str(self.config.INPUT_SIZE))
+        writer = SummaryWriter(tensorboard_path)
 
         train_loader = DataLoader(
             dataset=self.train_dataset,
@@ -147,11 +150,9 @@ class StructInpaint():
                 else:
 
                     # train
-                    if True or np.random.binomial(1, 0.5) > 0:
-                        outputs = self.struct_model(images, structs, masks)
-                        outputs = outputs * masks + structs * (1 - masks)
-                    else:
-                        outputs = structs
+                    outputs = self.struct_model(images, structs, masks)
+                    outputs = outputs * masks + structs * (1 - masks)
+                 
 
                     outputs, gen_loss, dis_loss, logs = self.inpaint_model.process(images, outputs.detach(), masks)
                     outputs_merged = (outputs * masks) + (images * (1 - masks))
@@ -284,11 +285,19 @@ class StructInpaint():
         )
 
         index = 0
+
         for items in test_loader:
             name = self.test_dataset.load_name(index)
+            mask_name = self.test_dataset.load_mask_name(index)
+            name = name[:-4] + '_' + mask_name
             images, structs, masks = self.cuda(*items)
             index += 1
 
+            fname, fext = name.split('.')
+            structs_masked = (structs * (1 - masks)) + masks
+            structs_masked = self.postprocess(structs_masked)[0]
+            imsave(structs_masked, os.path.join(self.results_path, fname + 'struct_masked.' + fext))
+            
             # struct model
             if model == 1:
                 outputs = self.struct_model(images, structs, masks)
@@ -307,7 +316,6 @@ class StructInpaint():
 
             output = self.postprocess(outputs_merged)[0]
             path = os.path.join(self.results_path, name)
-            print(index, name)
 
             imsave(output, path)
 
@@ -318,6 +326,9 @@ class StructInpaint():
 
                 imsave(structs, os.path.join(self.results_path, fname + '_struct.' + fext))
                 imsave(masked, os.path.join(self.results_path, fname + '_masked.' + fext))
+
+            if (index + 1) % 1000 == 0:
+                print(f"Processed {index+1}/10000")
 
         print('\nEnd test....')
 
@@ -365,11 +376,20 @@ class StructInpaint():
         
         grid_images = torch.cat([images, inputs, structs, outputs, outputs_merged], dim=-1)
    
-        # path = os.path.join(self.samples_path, self.model_name)
-        # name = os.path.join(path, str(iteration).zfill(5) + ".png")
-        # create_dir(path)
-        # print('\nsaving sample ' + name)
-        # images.save(name)
+        save_image = stitch_images(
+            self.postprocess(images),
+            self.postprocess(inputs),
+            self.postprocess(structs),
+            self.postprocess(outputs),
+            self.postprocess(outputs_merged),
+            img_per_row = image_per_row
+        )
+
+        path = os.path.join(self.samples_path, self.model_name + '_' + str(self.config.INPUT_SIZE))
+        name = os.path.join(path, str(iteration).zfill(5) + ".png")
+        create_dir(path)
+        print('\nsaving sample ' + name)
+        save_image.save(name)
 
         return grid_images
 

@@ -47,6 +47,10 @@ class Dataset(torch.utils.data.Dataset):
         name = self.data[index]
         return os.path.basename(name)
 
+    def load_mask_name(self, index):
+        mask_name = self.mask_data[index]
+        return os.path.basename(mask_name)
+
     def load_item(self, index):
 
         size = self.input_size

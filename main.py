@@ -116,7 +116,7 @@ def load_config(mode=None):
         if args.mask is not None:
             config.TEST_MASK_FLIST = args.mask
 
-        if args.structure is not None:
+        if args.struct is not None:
             config.TEST_STRUCT_FLIST = args.struct
 
         if args.output is not None:

@@ -36,7 +36,7 @@ class BaseNetwork(nn.Module):
 
 
 class InpaintGenerator(BaseNetwork):
-    def __init__(self, residual_blocks=8, init_weights=True):
+    def __init__(self, residual_blocks=9, init_weights=True):
         super(InpaintGenerator, self).__init__()
 
         self.encoder = nn.Sequential(
@@ -86,7 +86,7 @@ class InpaintGenerator(BaseNetwork):
         return x
 
 class StructGenerator(BaseNetwork):
-    def __init__(self, residual_blocks=8, use_spectral_norm=True, init_weights=True):
+    def __init__(self, residual_blocks=9, use_spectral_norm=True, init_weights=True):
         super(StructGenerator, self).__init__()
 
         self.encoder = nn.Sequential(

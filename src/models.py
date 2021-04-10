@@ -57,9 +57,9 @@ class StructModel(BaseModel):
         super(StructModel, self).__init__('StructModel', config)
 
         # generator input: [masked rgb(3) +  masked struct(3) + mask(1)]
-        # discriminator input: (rgb(3) + struct(3))
+        # discriminator input: struct(3)
         generator = StructGenerator(use_spectral_norm=True)
-        discriminator = Discriminator(in_channels=6, use_sigmoid=config.GAN_LOSS != 'hinge')
+        discriminator = Discriminator(in_channels=3, use_sigmoid=config.GAN_LOSS != 'hinge')
         if len(config.GPU) > 1:
             generator = nn.DataParallel(generator, config.GPU)
             discriminator = nn.DataParallel(discriminator, config.GPU)
@@ -96,10 +96,10 @@ class StructModel(BaseModel):
         self.dis_optimizer.zero_grad()
 
         # discriminator loss
-        dis_input_real = torch.cat((images, structs), dim=1)
-        dis_input_fake = torch.cat((images, outputs.detach()), dim=1)
-        dis_real, dis_real_feat = self.discriminator(dis_input_real)        # in: (rgb(3) + struct(3))
-        dis_fake, dis_fake_feat = self.discriminator(dis_input_fake)        # in: (rgb(3) + struct(3))
+        dis_input_real = structs
+        dis_input_fake = outputs.detach()
+        dis_real, dis_real_feat = self.discriminator(dis_input_real)        
+        dis_fake, dis_fake_feat = self.discriminator(dis_input_fake)    
         dis_real_loss = self.adversarial_loss(dis_real, True, True)
         dis_fake_loss = self.adversarial_loss(dis_fake, False, True)
         dis_loss += (dis_real_loss + dis_fake_loss) / 2
@@ -112,8 +112,8 @@ class StructModel(BaseModel):
         self.gen_optimizer.zero_grad()
 
         # generator adversarial loss
-        gen_input_fake = torch.cat((images, outputs), dim=1)
-        gen_fake, gen_fake_feat = self.discriminator(gen_input_fake)        # in: (rgb(3) + struct(3))
+        gen_input_fake = outputs
+        gen_fake, gen_fake_feat = self.discriminator(gen_input_fake)        # in: struct(3)
         gen_gan_loss = self.adversarial_loss(gen_fake, True, False)
         gen_loss += gen_gan_loss
 
