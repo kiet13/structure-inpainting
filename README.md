@@ -1,11 +1,10 @@
 ## Structure Inpainting: Image Inpainting using Structure Prediction
 
 ### Introduction:
-We develop a new approach for image inpainting that does a better job of reproducing filled regions exhibiting fine details inspired by our understanding of how artists work: *lines first, color next*. We propose a two-stage adversarial model EdgeConnect that comprises of an edge generator followed by an image completion network. The edge generator hallucinates edges of the missing region (both regular and irregular) of the image, and the image completion network fills in the missing regions using hallucinated edges as a priori. Detailed description of the system can be found in our [paper](https://arxiv.org/abs/1901.00212).
+We propose a two-stage image inpainting network which splits the task into two parts: structure reconstruction and texture generation. In the ﬁrst stage, edge-preserved smooth images are employed to train a structure reconstructor which completes the missing structures of the inputs. In the second stage, based on the reconstructed structures, a texture generator using perceptual loss is designed to yield image details.
 <p align='center'>  
-  <img src='https://user-images.githubusercontent.com/1743048/50673917-aac15080-0faf-11e9-9100-ef10864087c8.png' width='870'/>
+  <img src='https://drive.google.com/file/d/1rUeyD46OzBMn_X1pUOz7JP9VS5i5AO6O/view?usp=sharing'/>
 </p>
-(a) Input images with missing regions. The missing regions are depicted in white. (b) Computed edge masks. Edges drawn in black are computed (for the available regions) using Canny edge detector; whereas edges shown in blue are hallucinated by the edge generator network. (c) Image inpainting results of the proposed approach.
 
 ## Prerequisites
 - Python 3
@@ -15,8 +14,8 @@ We develop a new approach for image inpainting that does a better job of reprodu
 ## Installation
 - Clone this repo:
 ```bash
-git clone https://github.com/knazeri/edge-connect.git
-cd edge-connect
+git clone https://github.com/kiet13/structure-inpainting.git
+cd structure-inpainting
 ```
 - Install PyTorch and dependencies from http://pytorch.org
 - Install python requirements:
@@ -44,7 +43,7 @@ Please use [`scripts/flist.py`](scripts/flist.py) to generate train, test and va
 ## Getting Started
 Download the pre-trained models using the following links and copy them under `./checkpoints` directory.
 
-[Places2](https://drive.google.com/drive/folders/1KyXz4W4SAvfsGh3NJ7XgdOv5t46o-8aa) | [Paris-StreetView](https://drive.google.com/drive/folders/1cGwDaZqDcqYU7kDuEbMXa9TP3uDJRBR1)
+[Places2](https://drive.google.com/drive/folders/10w9_RsqDHyEM-f4RyBt1pMiDDDZWaVOl?usp=sharing) | [Paris-StreetView](https://drive.google.com/drive/folders/1ZEo5jB3AVbYURBDXNJblGJYZYlZf4XGM?usp=sharing)
 
 
 ### 1) Training
@@ -59,8 +58,6 @@ For example to train the edge model on Places2 dataset under `./checkpoints/plac
 ```bash
 python train.py --model 1 --checkpoints ./checkpoints/places2
 ```
-
-Convergence of the model differs from dataset to dataset. For example Places2 dataset converges in one of two epochs, while smaller datasets like CelebA require almost 40 epochs to converge. You can set the number of training iterations by changing `MAX_ITERS` value in the configuration file.
 
 ### 2) Testing
 To test the model, create a `config.yaml` file similar to the [example config file](config.yml.example) and copy it under your checkpoints directory. Read the [configuration](#model-configuration) guide for more information on model configuration.
@@ -89,7 +86,7 @@ This script will inpaint all images in `./examples/places2/images` using their c
 
 
 ### Alternative Structure Generation
-We do not apply any image smoothing technique in default. If you want to train the model with certain smoothing technique, you need to generate structure maps for entire training/test sets as a pre-processing and their corresponding file lists using [`scripts/flist.py`](scripts/flist.py). Please make sure the file names and directory structure match your training/test sets. In this project, we use L_0 and SGF as a smoothing technique for G1.
+We do not apply any image smoothing technique in default. If you want to train the model with certain smoothing technique, you need to generate structure maps for entire training/test sets as a pre-processing and their corresponding file lists using [`scripts/flist.py`](scripts/flist.py). Please make sure the file names and directory structure match your training/test sets. In this project, we use [`L_0`](http://www.cse.cuhk.edu.hk/~leojia/projects/L0smoothing/) and [`SGF`](https://github.com/feihuzhang/SGF) as a smoothing technique for G1.
 
 ### Model Configuration
 
@@ -144,3 +141,7 @@ EVAL_INTERVAL          | 0     | how many iterations to wait before evaluating t
 LOG_INTERVAL           | 10    | how many iterations to wait before logging training loss (0: never)
 SAMPLE_INTERVAL        | 1000  | how many iterations to wait before saving sample (0: never)
 SAMPLE_SIZE            | 10    | number of images to sample on each samling interval
+
+### Acknowledgements
+
+We built our code based on [Edge-Connect](https://github.com/knazeri/edge-connect). Please consider to cite their papers. 
