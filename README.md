@@ -3,7 +3,7 @@
 ### Introduction:
 We propose a two-stage image inpainting network which splits the task into two parts: structure reconstruction and texture generation. In the ﬁrst stage, edge-preserved smooth images are employed to train a structure reconstructor which completes the missing structures of the inputs. In the second stage, based on the reconstructed structures, a texture generator using perceptual loss is designed to yield image details.
 <p align='center'>  
-  <img src='https://drive.google.com/file/d/1rUeyD46OzBMn_X1pUOz7JP9VS5i5AO6O/view?usp=sharing'/>
+  <img src='https://drive.google.com/uc?export=download&id=1rUeyD46OzBMn_X1pUOz7JP9VS5i5AO6O'/>
 </p>
 
 ## Prerequisites
