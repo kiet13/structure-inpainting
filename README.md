@@ -81,8 +81,14 @@ python test.py \
 This script will inpaint all images in `./examples/places2/images` using their corresponding masks in `./examples/places2/masks` directory and structure in `./examples/places2/structs' saves the results in `./checkpoints/results` directory.
 
 
-### Alternative Structure Generation
-We do not apply any image smoothing technique in default. If you want to train the model with certain smoothing technique, you need to generate structure maps for entire training/test sets as a pre-processing and their corresponding file lists using [`scripts/flist.py`](scripts/flist.py). Please make sure the file names and directory structure match your training/test sets. In this project, we use [`L0`](http://www.cse.cuhk.edu.hk/~leojia/projects/L0smoothing/) and [`SGF`](https://github.com/feihuzhang/SGF) as a smoothing technique for G1.
+### Structure Generation
+We do not apply any image smoothing technique in default. If you want to train the model with certain smoothing technique, you need to generate structure maps for entire training/test sets as a pre-processing and their corresponding file lists using [`scripts/flist.py`](scripts/flist.py). Please make sure the file names and directory structure match your training/test sets. In this project, we use [`L0`](http://www.cse.cuhk.edu.hk/~leojia/projects/L0smoothing/) and [`SGF`](https://github.com/feihuzhang/SGF) as a smoothing technique for structure generation model.
+
+#### Generate smoothing image:
+```bash
+chmod 755 ./scripts/gen_structure.sh
+./scripts/gen_structure.sh input_folder output_folder smoothing (L0/SGF) 
+```
 
 ### Model Configuration
 
