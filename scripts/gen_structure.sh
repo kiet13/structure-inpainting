@@ -15,7 +15,7 @@ then
     octave --eval "pkg install -forge image"
     echo "pkg load image;" >> .octaverc
 
-    python run_octave_code.py --input_path $1 --output_path $2 --Lambda 0.04
+    python run_L0_octave.py --input_path $1 --output_path $2 --Lambda 0.04
 fi
 
 if [[ $3 == 'SGF' ]]
