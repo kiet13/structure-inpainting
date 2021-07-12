@@ -39,7 +39,7 @@ Our model is trained on the irregular mask dataset provided by [Liu et al.](http
 ## Getting Started
 Download the pre-trained models using the following links and copy them under `./checkpoints` directory.
 
-[Places2](https://drive.google.com/drive/folders/10w9_RsqDHyEM-f4RyBt1pMiDDDZWaVOl?usp=sharing) | [Paris-StreetView](https://drive.google.com/drive/folders/1ZEo5jB3AVbYURBDXNJblGJYZYlZf4XGM?usp=sharing)
+[Places2](https://drive.google.com/drive/folders/1ZEo5jB3AVbYURBDXNJblGJYZYlZf4XGM?usp=sharing) | [Paris-StreetView](https://drive.google.com/drive/folders/10w9_RsqDHyEM-f4RyBt1pMiDDDZWaVOl?usp=sharing)
 
 
 ### 1) Training
