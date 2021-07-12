@@ -85,7 +85,58 @@ class InpaintGenerator(BaseNetwork):
 
         return x
 
-class StructGenerator(nn.Module):
+# G1 Generator based on EdgeConnect: https://arxiv.org/abs/1901.00212
+class StructGenerator(BaseNetwork):
+    def __init__(self, residual_blocks=9, use_spectral_norm=True, init_weights=True):
+        super(StructGenerator, self).__init__()
+
+        self.encoder = nn.Sequential(
+            nn.ReflectionPad2d(3),
+            spectral_norm(nn.Conv2d(in_channels=7, out_channels=64, kernel_size=7, padding=0), use_spectral_norm),
+            nn.InstanceNorm2d(64, track_running_stats=False),
+            nn.ReLU(True),
+
+            spectral_norm(nn.Conv2d(in_channels=64, out_channels=128, kernel_size=4, stride=2, padding=1), use_spectral_norm),
+            nn.InstanceNorm2d(128, track_running_stats=False),
+            nn.ReLU(True),
+
+            spectral_norm(nn.Conv2d(in_channels=128, out_channels=256, kernel_size=4, stride=2, padding=1), use_spectral_norm),
+            nn.InstanceNorm2d(256, track_running_stats=False),
+            nn.ReLU(True)
+        )
+
+        blocks = []
+        for _ in range(residual_blocks):
+            block = ResnetBlock(256, 2, use_spectral_norm=use_spectral_norm)
+            blocks.append(block)
+
+        self.middle = nn.Sequential(*blocks)
+
+        self.decoder = nn.Sequential(
+            spectral_norm(nn.ConvTranspose2d(in_channels=256, out_channels=128, kernel_size=4, stride=2, padding=1), use_spectral_norm),
+            nn.InstanceNorm2d(128, track_running_stats=False),
+            nn.ReLU(True),
+
+            spectral_norm(nn.ConvTranspose2d(in_channels=128, out_channels=64, kernel_size=4, stride=2, padding=1), use_spectral_norm),
+            nn.InstanceNorm2d(64, track_running_stats=False),
+            nn.ReLU(True),
+
+            nn.ReflectionPad2d(3),
+            nn.Conv2d(in_channels=64, out_channels=3, kernel_size=7, padding=0),
+        )
+
+        if init_weights:
+            self.init_weights()
+
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.middle(x)
+        x = self.decoder(x)
+        x = (torch.tanh(x) + 1) / 2
+        return x
+
+# G'1 generator based on StructureFlow:  https://github.com/RenYurui/StructureFlow
+class StructAposGenerator(nn.Module):
     def __init__(self, input_dim=3, dim=64, n_res=4, activ='relu', 
                  norm='in', pad_type='reflect', use_sn=True):
         super(StructGenerator, self).__init__()

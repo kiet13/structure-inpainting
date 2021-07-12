@@ -2,7 +2,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from .networks import InpaintGenerator, StructGenerator, Discriminator
+from .networks import InpaintGenerator, StructGenerator, StructAposGenerator, Discriminator
 from .loss import AdversarialLoss, PerceptualLoss, StyleLoss
 from .utils import output_align
 
@@ -58,7 +58,8 @@ class StructModel(BaseModel):
 
         # generator input: [masked rgb(3) +  masked struct(3) + mask(1)]
         # discriminator input: struct(3)
-        generator = StructGenerator(use_spectral_norm=True)
+       
+        generator = StructAposGenerator() if config.APOS else StructGenerator()
         discriminator = Discriminator(in_channels=3, use_sigmoid=config.GAN_LOSS != 'hinge')
         if len(config.GPU) > 1:
             generator = nn.DataParallel(generator, config.GPU)

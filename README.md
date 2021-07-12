@@ -37,7 +37,7 @@ python ./scripts/flist.py --path path_to_places2_train_set --output ./datasets/p
 Our model is trained on the irregular mask dataset provided by [Liu et al.](https://arxiv.org/abs/1804.07723). You can download publically available Irregular Mask Dataset from [their website](http://masc.cs.gmu.edu/wiki/partialconv).
 
 ## Getting Started
-Download the pre-trained models using the following links and copy them under `./checkpoints` directory.
+Download the pre-trained models using the following links and copy them under `./checkpoints` directory. Those are trained on G'1 (StructureFlow) generator in first stage.
 
 [Places2](https://drive.google.com/drive/folders/1ZEo5jB3AVbYURBDXNJblGJYZYlZf4XGM?usp=sharing) | [Paris-StreetView](https://drive.google.com/drive/folders/10w9_RsqDHyEM-f4RyBt1pMiDDDZWaVOl?usp=sharing)
 
@@ -56,7 +56,7 @@ python train.py --model 1 --checkpoints ./checkpoints/places2
 ```
 
 ### 2) Testing
-To test the model, create a `config.yaml` file similar to the [example config file](config.yml.example) and copy it under your checkpoints directory. Read the [configuration](#model-configuration) guide for more information on model configuration.
+To test the model, create a `config.yaml` file similar to the [example config file](config.yml.example) and copy it under your checkpoints directory.
 
 You can test the model on all three stages: 1) structure model, 2) inpaint model and 3) joint model. In each case, you need to provide an input image (image with a mask) and a grayscale mask file. Please make sure that the mask file covers the entire mask region in the input image. To test the model:
 ```bash
@@ -94,6 +94,7 @@ Option          | Description
 ----------------| -----------
 MODE            | 1: train, 2: test, 3: eval
 MODEL           | 1: structure model, 2: inpaint model, 3: joint model
+APOS            | 0: G1 (EdgeConnect), 1: G'1 (StructureFlow)
 MASK            | 1: random block, 2: half, 3: external, 4: external + random block, 5: external + random block + half
 SEED            | random number generator seed
 GPU             | list of gpu ids, comma separated list e.g. [0,1]
