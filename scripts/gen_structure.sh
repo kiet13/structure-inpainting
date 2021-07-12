@@ -27,7 +27,7 @@ then
     for imageName in $1/*
     do
         outputName="${imageName##*/}"
-        outputName="$2/$outpurName"
+        outputName="$2/$outputName"
         ./SGF $imageName $imageName $outputName 8 0.05 0.1 3
     done
 fi
