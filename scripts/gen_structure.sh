@@ -31,3 +31,5 @@ then
         ./SGF $imageName $imageName $outputName 8 0.05 0.1 3
     done
 fi
+
+cd ../..
