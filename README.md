@@ -3,7 +3,7 @@
 ### Introduction:
 We propose a two-stage image inpainting network which splits the task into two parts: structure reconstruction and texture generation. In the ﬁrst stage, edge-preserved smooth images are employed to train a structure reconstructor which completes the missing structures of the inputs. In the second stage, based on the reconstructed structures, a texture generator using perceptual loss is designed to yield image details.
 <p align='center'>  
-  <img src='https://drive.google.com/uc?export=download&id=1rUeyD46OzBMn_X1pUOz7JP9VS5i5AO6O' width=870/>
+  <img src='https://drive.google.com/uc?export=download&id=1m11zU5-srJFuEyyTMIpE7lQctGBAl6a5' width=870/>
 </p>
 
 ## Prerequisites
@@ -36,10 +36,6 @@ python ./scripts/flist.py --path path_to_places2_train_set --output ./datasets/p
 ### 2) Irregular Masks
 Our model is trained on the irregular mask dataset provided by [Liu et al.](https://arxiv.org/abs/1804.07723). You can download publically available Irregular Mask Dataset from [their website](http://masc.cs.gmu.edu/wiki/partialconv).
 
-Alternatively, you can download [Quick Draw Irregular Mask Dataset](https://github.com/karfly/qd-imd) by Karim Iskakov which is combination of 50 million strokes drawn by human hand.
-
-Please use [`scripts/flist.py`](scripts/flist.py) to generate train, test and validation set masks file lists as explained above.
-
 ## Getting Started
 Download the pre-trained models using the following links and copy them under `./checkpoints` directory.
 
@@ -47,14 +43,14 @@ Download the pre-trained models using the following links and copy them under `.
 
 
 ### 1) Training
-To train the model, create a `config.yaml` file similar to the [example config file](https://github.com/knazeri/edge-connect/blob/master/config.yml.example) and copy it under your checkpoints directory. Read the [configuration](#model-configuration) guide for more information on model configuration.
+To train the model, create a `config.yaml` file similar to the [example config file](https://github.com/knazeri/edge-connect/blob/master/config.yml.example) and copy it under your checkpoints directory.
 
 Structure Inpainting is trained in three stages: 1) training the structure model, 2) training the inpaint model and 3) training the joint model. To train the model:
 ```bash
 python train.py --model [stage] --checkpoints [path to checkpoints]
 ```
 
-For example to train the edge model on Places2 dataset under `./checkpoints/places2` directory:
+For example to train the structure model on Places2 dataset under `./checkpoints/places2` directory:
 ```bash
 python train.py --model 1 --checkpoints ./checkpoints/places2
 ```
@@ -86,7 +82,7 @@ This script will inpaint all images in `./examples/places2/images` using their c
 
 
 ### Alternative Structure Generation
-We do not apply any image smoothing technique in default. If you want to train the model with certain smoothing technique, you need to generate structure maps for entire training/test sets as a pre-processing and their corresponding file lists using [`scripts/flist.py`](scripts/flist.py). Please make sure the file names and directory structure match your training/test sets. In this project, we use [`L_0`](http://www.cse.cuhk.edu.hk/~leojia/projects/L0smoothing/) and [`SGF`](https://github.com/feihuzhang/SGF) as a smoothing technique for G1.
+We do not apply any image smoothing technique in default. If you want to train the model with certain smoothing technique, you need to generate structure maps for entire training/test sets as a pre-processing and their corresponding file lists using [`scripts/flist.py`](scripts/flist.py). Please make sure the file names and directory structure match your training/test sets. In this project, we use [`L0`](http://www.cse.cuhk.edu.hk/~leojia/projects/L0smoothing/) and [`SGF`](https://github.com/feihuzhang/SGF) as a smoothing technique for G1.
 
 ### Model Configuration
 
@@ -97,7 +93,7 @@ The model configuration is stored in a [`config.yaml`](config.yml.example) file 
 Option          | Description
 ----------------| -----------
 MODE            | 1: train, 2: test, 3: eval
-MODEL           | 1: edge model, 2: inpaint model, 3: edge-inpaint model, 4: joint model
+MODEL           | 1: structure model, 2: inpaint model, 3: joint model
 MASK            | 1: random block, 2: half, 3: external, 4: external + random block, 5: external + random block + half
 SEED            | random number generator seed
 GPU             | list of gpu ids, comma separated list e.g. [0,1]
@@ -111,9 +107,9 @@ Option          | Description
 TRAIN_FLIST     | text file containing training set files list
 VAL_FLIST       | text file containing validation set files list
 TEST_FLIST      | text file containing test set files list
-TRAIN_STRUCT_FLIST| text file containing training set external edges files list
-VAL_STRUCT_FLIST  | text file containing validation set external edges files list
-TEST_STRUCT_FLIST | text file containing test set external edges files list
+TRAIN_STRUCT_FLIST| text file containing training set external structure files list
+VAL_STRUCT_FLIST  | text file containing validation set external structure files list
+TEST_STRUCT_FLIST | text file containing test set external structure files list
 TRAIN_MASK_FLIST| text file containing training set masks files list (only with MASK=3, 4, 5)
 VAL_MASK_FLIST  | text file containing validation set masks files list (only with MASK=3, 4, 5)
 TEST_MASK_FLIST | text file containing test set masks files list (only with MASK=3, 4, 5)
@@ -124,7 +120,7 @@ Option                 |Default| Description
 -----------------------|-------|------------
 LR                     | 0.0001| learning rate
 D2G_LR                 | 0.1   | discriminator/generator learning rate ratio
-BETA1                  | 0.0   | adam optimizer beta1
+BETA1                  | 0.5   | adam optimizer beta1
 BETA2                  | 0.9   | adam optimizer beta2
 BATCH_SIZE             | 8     | input batch size 
 INPUT_SIZE             | 256   | input image size for training. (0 for original size)
